@@ -23,16 +23,49 @@ refs.form.addEventListener('submit', onSearch);
 function onSearch(evt) {
   searchParams.set('q', refs.input.value);
   evt.preventDefault();
-  fetchImages(searchParams);
-  // populateGallery();
+  populateGallery();
 }
 
 async function fetchImages(searchParams) {
   const response = await axios.get(`${BASE_URL}?${searchParams}`);
-  return response;
+  const images = response.data.hits;
+  return images;
 }
 
 async function populateGallery() {
-  const images = await fetchImages();
-  // images.hits.forEach(image => console.log(image));
+  const images = await fetchImages(searchParams);
+  const markup = images
+    .map(
+      image => `<div class="photo-card">
+  <img src="${image.webformatURL}" alt="${image.tags}" loading="lazy" />
+  <div class="info">
+    <p class="info-item">
+      <b>Likes</b>
+      <span>${image.likes}<span>
+    </p>
+    <p class="info-item">
+      <b>Views</b>
+      <span>${image.views}<span>
+    </p>
+    <p class="info-item">
+      <b>Comments</b>
+      <span>${image.comments}<span>
+    </p>
+    <p class="info-item">
+      <b>Downloads</b>
+      <span>${image.downloads}<span>
+    </p>
+  </div>
+</div>`
+    )
+    .join('');
+
+  if (images.length === 0) {
+    Notify.failure(
+      'Sorry, there are no images matching your search query. Please try again.'
+    );
+    return;
+  }
+
+  refs.gallery.innerHTML = markup;
 }
