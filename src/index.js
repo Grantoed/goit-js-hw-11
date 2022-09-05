@@ -2,7 +2,18 @@ import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 
-import { searchParams, fetchImages } from './js/pixabay-api';
+import * as pixabayAPI from './js/pixabay-api';
+
+const API_KEY = '29655167-0362cdc5085e0df03dd8615c7';
+
+const searchParams = new URLSearchParams({
+  key: API_KEY,
+  q: '',
+  image_type: 'photo',
+  orientation: 'horizontal',
+  safeSearch: true,
+  page: 1,
+});
 
 const refs = {
   gallery: document.querySelector('.gallery'),
@@ -12,16 +23,29 @@ const refs = {
 
 refs.form.addEventListener('submit', onSearch);
 
+window.addEventListener('scroll', () => {
+  if (
+    window.scrollY + window.innerHeight >=
+    document.documentElement.scrollHeight
+  ) {
+    pixabayAPI.loadMore().then(populateGallery);
+  }
+});
+
 function onSearch(evt) {
   searchParams.set('q', refs.input.value);
   evt.preventDefault();
-  populateGallery();
+  resetOutput();
+  pixabayAPI.resetPage();
+  pixabayAPI.fetchImages(searchParams).then(r => {
+    populateGallery(r);
+    makeNotification(r);
+  });
 }
 
-async function populateGallery() {
-  const response = await fetchImages(searchParams);
+async function populateGallery(response) {
   const images = response.data.hits;
-  const imagesFound = images.length !== 0;
+  // const imagesFound = images.length !== 0;
   const markup = images.reduce(
     (acc, image) =>
       acc +
@@ -49,16 +73,7 @@ async function populateGallery() {
     ''
   );
 
-  if (imagesFound) {
-    Notify.success(`Enjoy ${response.data.totalHits} images`);
-  } else {
-    Notify.failure(
-      'Sorry, there are no images matching your search query. Please try again.'
-    );
-    return;
-  }
-
-  refs.gallery.innerHTML = markup;
+  refs.gallery.insertAdjacentHTML('beforeend', markup);
 
   openLightbox();
 }
@@ -73,4 +88,21 @@ function openLightbox() {
     lightbox.on('show.simplelightbox');
   });
   lightbox.refresh();
+}
+
+function resetOutput() {
+  refs.gallery.innerHTML = '';
+}
+
+function makeNotification(response) {
+  const imagesFound = response.data.hits.length !== 0;
+
+  if (imagesFound) {
+    Notify.success(`Enjoy ${response.data.totalHits} images`);
+  } else {
+    Notify.failure(
+      'Sorry, there are no images matching your search query. Please try again.'
+    );
+    return;
+  }
 }
