@@ -28,7 +28,7 @@ window.addEventListener('scroll', () => {
     window.scrollY + window.innerHeight >=
     document.documentElement.scrollHeight
   ) {
-    pixabayAPI.loadMore().then(populateGallery);
+    loadMore().then(populateGallery);
   }
 });
 
@@ -43,9 +43,12 @@ function onSearch(evt) {
   });
 }
 
+function loadMore() {
+  return pixabayAPI.fetchImages(searchParams);
+}
+
 async function populateGallery(response) {
   const images = response.data.hits;
-  // const imagesFound = images.length !== 0;
   const markup = images.reduce(
     (acc, image) =>
       acc +
