@@ -23,21 +23,7 @@ const refs = {
 
 refs.form.addEventListener('submit', onSearch);
 
-window.addEventListener('scroll', () => {
-  if (
-    window.scrollY + window.innerHeight >=
-    document.documentElement.scrollHeight
-  ) {
-    loadMore().then(response => {
-      if (response.data.hits.length === 0) {
-        Notify.warning('You have reached the end of the list');
-        return;
-      } else {
-        populateGallery(response);
-      }
-    });
-  }
-});
+window.addEventListener('scroll', onScroll);
 
 function onSearch(evt) {
   searchParams.set('q', refs.input.value);
@@ -48,6 +34,23 @@ function onSearch(evt) {
     populateGallery(r);
     makeNotification(r);
   });
+}
+
+function onScroll() {
+  if (
+    window.scrollY + window.innerHeight >=
+    document.documentElement.scrollHeight
+  ) {
+    loadMore().then(response => {
+      if (response.data.hits.length === 0) {
+        Notify.warning('You have reached the end of the list');
+        window.removeEventListener('scroll', onScroll);
+        return;
+      } else {
+        populateGallery(response);
+      }
+    });
+  }
 }
 
 function loadMore() {
