@@ -28,7 +28,14 @@ window.addEventListener('scroll', () => {
     window.scrollY + window.innerHeight >=
     document.documentElement.scrollHeight
   ) {
-    loadMore().then(populateGallery);
+    loadMore().then(response => {
+      if (response.data.hits.length === 0) {
+        Notify.warning('You have reached the end of the list');
+        return;
+      } else {
+        populateGallery(response);
+      }
+    });
   }
 });
 
